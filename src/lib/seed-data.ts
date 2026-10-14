@@ -721,3 +721,10 @@ export const WEBHOOK_PRESETS: {
     },
   },
 ];
+
+/* Compatibility Aliases */
+export const SEED_CUSTOMERS = INITIAL_CUSTOMERS;
+export const SEED_ORDERS = INITIAL_ORDERS;
+export const SEED_COMMUNICATION_LOGS = INITIAL_COMM_LOGS;
+export const SEED_AI_ALERTS = INITIAL_TRIAGE_ALERTS;
+export const SIMULATOR_PRESETS = WEBHOOK_PRESETS;

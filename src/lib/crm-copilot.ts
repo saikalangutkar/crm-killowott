@@ -201,3 +201,56 @@ export class CrmCopilotEngine {
     };
   }
 }
+
+export const COPILOT_QUICK_PROMPTS = [
+  "Who are our top VIP patrons?",
+  "Which orders are pending fulfillment?",
+  "What is our status on order recovery campaigns?",
+  "Draft a thank you message for Elena",
+  "Give me an overview of the CRM",
+];
+
+const defaultCopilotEngine = new CrmCopilotEngine();
+
+export function queryCrmCopilot(
+  query: string,
+  context: {
+    customers: any[];
+    orders: any[];
+    communicationLogs?: any[];
+    logs?: any[];
+    aiAlerts?: any[];
+    alerts?: any[];
+  }
+) {
+  const normalizedCustomers = context.customers.map((c) => ({
+    ...c,
+    id: c.id || c.email,
+    fullName: c.fullName || `${c.first_name || ""} ${c.last_name || ""}`.trim(),
+    firstName: c.firstName || c.first_name || "",
+    lastName: c.lastName || c.last_name || "",
+    lifetimeValue: c.lifetimeValue ?? c.total_spend ?? 0,
+    ordersCount: c.ordersCount ?? c.orders_count ?? 1,
+    segment: c.segment || "New",
+  }));
+
+  const res = defaultCopilotEngine.answerQuery(query, {
+    customers: normalizedCustomers as any,
+    orders: context.orders as any,
+    alerts: (context.alerts || context.aiAlerts || []) as any,
+    logs: (context.logs || context.communicationLogs || []) as any,
+  });
+
+  const dataPointsMap: Record<string, string | number> = {};
+  if (res.dataPoints) {
+    for (const dp of res.dataPoints) {
+      dataPointsMap[dp.label] = dp.value;
+    }
+  }
+
+  return {
+    answer: res.text,
+    suggestedAction: res.suggestedActions?.[0]?.label,
+    dataPoints: dataPointsMap,
+  };
+}

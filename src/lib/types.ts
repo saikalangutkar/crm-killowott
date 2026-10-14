@@ -166,3 +166,7 @@ export interface CrmCustomerEvent {
   customer: CrmCustomer;
   previousSegment?: CustomerSegment;
 }
+
+/* Backward compatibility aliases */
+export type Customer = CrmCustomer;
+export type WooCommerceWebhookPayload = WooCommerceOrderPayload;

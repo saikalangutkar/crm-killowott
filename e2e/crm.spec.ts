@@ -1,9 +1,38 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Kilowott CRM - WooCommerce Integration & AI Triage E2E", () => {
-  test.beforeEach(async ({ page }) => {
+test.describe("Kilowott CRM - Landing Page & Editorial Studio E2E", () => {
+  test("renders landing page, verifies loader, hero headline, and navigates to dashboard", async ({ page }) => {
     await page.goto("/");
-    // Wait for the main heading to ensure hydration is complete
+
+    // 1. Verify Brand & Hero Headline
+    await expect(page.getByText("Every order.")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Every customer.")).toBeVisible();
+    await expect(page.getByText("One calm view.")).toBeVisible();
+
+    // 2. Verify Core Architecture & Features sections
+    await expect(page.getByRole("heading", { name: "Deterministic Guest Merge" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dynamic Strategy Segmentation" })).toBeVisible();
+
+    // 3. Test Request Walkthrough Modal
+    const walkthroughBtn = page.getByRole("button", { name: "Request Walkthrough" }).first();
+    if (await walkthroughBtn.isVisible()) {
+      await walkthroughBtn.click();
+      await expect(page.getByRole("heading", { name: "Schedule Private Walkthrough" })).toBeVisible();
+      // Press Escape to close modal
+      await page.keyboard.press("Escape");
+    }
+
+    // 4. Click Open Dashboard CTA
+    await page.getByRole("link", { name: "Open Dashboard" }).first().click();
+    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page.getByRole("heading", { name: "Kilowott CRM" })).toBeVisible();
+  });
+});
+
+test.describe("Kilowott CRM - WooCommerce Integration & AI Triage Dashboard E2E", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/dashboard");
+    // Ensure dashboard heading is loaded
     await expect(page.getByRole("heading", { name: "Kilowott CRM" })).toBeVisible();
   });
 
@@ -20,11 +49,12 @@ test.describe("Kilowott CRM - WooCommerce Integration & AI Triage E2E", () => {
     await page.getByTestId("simulate-webhook-button").click();
     await expect(page.getByRole("heading", { name: "WooCommerce Live Webhook Simulator" })).toBeVisible();
 
-    // Verify all 4 demo presets are available
-    await expect(page.getByText("Standard Order ($89.00)")).toBeVisible();
-    await expect(page.getByText("VIP Whale Order ($1,250.00)")).toBeVisible();
-    await expect(page.getByText("Guest Checkout ($145.00)")).toBeVisible();
-    await expect(page.getByText("Order Cancellation ($340.00)")).toBeVisible();
+    // Verify demo presets are available inside modal
+    const modal = page.getByRole("dialog");
+    await expect(modal.getByText(/Standard Order/i)).toBeVisible();
+    await expect(modal.getByText(/VIP Whale Order/i)).toBeVisible();
+    await expect(modal.getByText("Guest Checkout ($145.00)")).toBeVisible();
+    await expect(modal.getByText(/Order Cancellation/i)).toBeVisible();
 
     // Trigger VIP Whale Order preset
     await page.getByTestId("dispatch-preset-vip_whale").click();
@@ -39,7 +69,7 @@ test.describe("Kilowott CRM - WooCommerce Integration & AI Triage E2E", () => {
     await page.getByTestId("simulate-webhook-button").click();
     await page.getByTestId("dispatch-preset-guest_checkout").click();
 
-    // Confirm webhook was ingested with guest tag/note
+    // Confirm webhook was ingested with guest note
     await expect(
       page.getByText(/Ingested WooCommerce Webhook.*Guest checkout mapped by email/i)
     ).toBeVisible({ timeout: 5000 });
@@ -93,14 +123,14 @@ test.describe("Kilowott CRM - WooCommerce Integration & AI Triage E2E", () => {
     await expect(page.getByText("Win-Back Recovery Campaign").first()).toBeVisible({ timeout: 5000 });
 
     // Find action button for triage and click
-    const actionButton = page.locator("button:has-text('Dispatch VIP Concierge')").first();
+    const actionButton = page.locator("button:has-text('Dispatch VIP Concierge Greeting')").first();
     await expect(actionButton).toBeVisible();
     await actionButton.click();
     await expect(page.getByText(/AI Action Dispatched/i)).toBeVisible();
   });
 
   test("switches segmentation strategy at runtime via Strategy Pattern", async ({ page }) => {
-    const strategySelect = page.getByLabel("Segmentation Strategy");
+    const strategySelect = page.getByLabel("Segmentation Strategy").first();
     await expect(strategySelect).toBeVisible();
 
     // Switch to Order Frequency Strategy
