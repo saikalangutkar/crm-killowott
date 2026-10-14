@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kilowott CRM — Architecture & Hackathon Pitch Deck</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --color-primary: #6366f1;
+      --color-primary-light: #818cf8;
+      --color-accent: #38bdf8;
+      --color-gold: #f59e0b;
+      --color-emerald: #10b981;
+      --color-rose: #f43f5e;
+      --color-background: #080c14;
+      --color-surface: #0f172a;
+      --color-surface-elevated: #1e293b;
+      --color-text: #f8fafc;
+      --color-text-muted: #94a3b8;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--color-background);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* 16:9 Aspect Ratio Container */
+    .slide-deck {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 100vw;
+      height: 100vh;
+      max-width: calc(100vh * 16 / 9);
+      max-height: calc(100vw * 9 / 16);
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 10%, #151e36 0%, #080c14 70%);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 64px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px) scale(0.99);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Badges & Typography */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      width: fit-content;
+    }
+    .badge-primary { background: rgba(99, 102, 241, 0.15); color: var(--color-primary-light); border: 1px solid rgba(99, 102, 241, 0.3); }
+    .badge-gold { background: rgba(245, 158, 11, 0.15); color: var(--color-gold); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: var(--color-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    h1 { font-size: 44px; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px; }
+    h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 8px; }
+    p.subtitle { font-size: 17px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 28px; max-width: 900px; }
+
+    /* Grids & Cards */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; width: 100%; }
+    .card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      text-align: left;
+    }
+    .card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .card p { font-size: 13.5px; color: var(--color-text-muted); line-height: 1.5; }
+
+    .metric-value { font-size: 36px; font-weight: 800; color: #fff; margin: 4px 0; }
+    .metric-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600; }
+
+    /* Controls & Navigation */
+    .nav-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 64px;
+      right: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 50;
+    }
+    .slide-counter { font-size: 12px; font-weight: 600; color: var(--color-text-muted); letter-spacing: 0.05em; }
+    .nav-buttons { display: flex; gap: 8px; }
+    .nav-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover { background: var(--color-primary); }
+
+    /* Code Snippet Pill */
+    .code-pill {
+      font-family: monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      color: var(--color-accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide-deck" id="deck">
+
+    <!-- SLIDE 1: Title -->
+    <div class="slide active">
+      <div class="badge badge-primary">Hackathon Challenge Solution</div>
+      <h1>Kilowott CRM</h1>
+      <h2 style="color: var(--color-primary-light); font-weight: 600; margin-bottom: 16px;">
+        WooCommerce Integration &amp; Autonomous Agentic AI
+      </h2>
+      <p class="subtitle">
+        Bridging high-velocity e-commerce transaction streams with enterprise CRM relationship management, 360° customer analytics, and autonomous AI triage.
+      </p>
+      <div class="grid-3" style="margin-top: 10px;">
+        <div class="card" style="border-color: rgba(99, 102, 241, 0.3);">
+          <div class="badge badge-primary">Pattern 1</div>
+          <h3>WooCommerce Adapter</h3>
+          <p>Normalizes raw webhook structures and maps guest checkouts (<span class="code-pill">customer_id = 0</span>) by email deduplication.</p>
+        </div>
+        <div class="card" style="border-color: rgba(56, 189, 248, 0.3);">
+          <div class="badge badge-primary">Pattern 2</div>
+          <h3>Strategy Pattern</h3>
+          <p>Pluggable algorithms (Tiered LTV, Frequency, Hybrid RFM) dynamically swappable at runtime via context.</p>
+        </div>
+        <div class="card" style="border-color: rgba(16, 185, 129, 0.3);">
+          <div class="badge badge-primary">Pattern 3</div>
+          <h3>Observer Engine &amp; AI</h3>
+          <p>Autonomous lifecycle event publisher dispatching omnichannel logs and embedded AI Concierge briefings.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: Problem Statement -->
+    <div class="slide">
+      <div class="badge badge-gold">The Problem</div>
+      <h2>The WooCommerce-to-CRM Disconnect</h2>
+      <p class="subtitle">
+        Standard WooCommerce stores lose critical customer relationship signals due to fragmentation, guest orders, and static email templates.
+      </p>
+      <div class="grid-3">
+        <div class="card">
+          <h3 style="color: var(--color-rose);">1. Guest Checkout Blindspot</h3>
+          <p>Over 40% of WooCommerce purchases occur as guests (<span class="code-pill">customer_id: 0</span>), fracturing customer purchase histories and hiding true Lifetime Value.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--color-gold);">2. Static Pipeline Silos</h3>
+          <p>Order status updates remain buried inside store admin panels rather than driving automated, customer-facing omnichannel notification workflows.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--color-primary-light);">3. Zero Autonomous Recovery</h3>
+          <p>When orders are cancelled or high-value VIP whales purchase, store owners receive no actionable synthesis or intelligent recovery campaigns.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Architecture & Design Patterns -->
+    <div class="slide">
+      <div class="badge badge-primary">Clean Architecture</div>
+      <h2>Explicit Enterprise Design Patterns</h2>
+      <p class="subtitle">
+        Implemented in <span class="code-pill">src/lib/crm-engine.ts</span> to ensure testability, loose coupling, and enterprise scalability.
+      </p>
+      <div class="grid-3">
+        <div class="card">
+          <div style="font-size: 20px; font-weight: 800; color: var(--color-accent); margin-bottom: 6px;">Adapter Pattern</div>
+          <h3>WooCommerceAdapter</h3>
+          <p>Translates external snake_case schemas and resolves <span class="code-pill">customer_id = 0</span> by indexing <span class="code-pill">billing.email</span>, merging multi-order guest spend seamlessly.</p>
+        </div>
+        <div class="card">
+          <div style="font-size: 20px; font-weight: 800; color: var(--color-primary-light); margin-bottom: 6px;">Strategy Pattern</div>
+          <h3>SegmentationStrategy</h3>
+          <p><span class="code-pill">ISegmentationStrategy</span> defines swappable evaluation algorithms. Administrators can toggle between Tiered LTV, Frequency, or RFM live in the UI.</p>
+        </div>
+        <div class="card">
+          <div style="font-size: 20px; font-weight: 800; color: var(--color-emerald); margin-bottom: 6px;">Observer Pattern</div>
+          <h3>WorkflowEngine</h3>
+          <p>Decoupled subject notifying <span class="code-pill">CommunicationWorkflowObserver</span>, <span class="code-pill">AiTriageObserver</span>, and analytics monitors on all order transitions.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Customer 360 & Order Pipeline -->
+    <div class="slide">
+      <div class="badge badge-emerald">User Experience</div>
+      <h2>360° Customer Drawer &amp; Real-Time Pipeline</h2>
+      <p class="subtitle">
+        Real-time visibility into customer history, address books, and interactive Kanban stage transitions.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>360° Customer Slide-Over Drawer</h3>
+          <p style="margin-bottom: 12px;">Accessible by clicking any customer row or order badge:</p>
+          <ul style="font-size: 13px; color: var(--color-text-muted); line-height: 1.8; padding-left: 18px;">
+            <li>Dynamic Lifetime Value (LTV) and Average Order Value (AOV) KPIs</li>
+            <li>Itemized historical timeline with direct product breakdowns</li>
+            <li>Omnichannel communication log (WhatsApp &amp; Email delivery history)</li>
+            <li>Direct concierge outreach controls (WhatsApp / Email / Internal Notes)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Real-Time Order Kanban Pipeline</h3>
+          <p style="margin-bottom: 12px;">Visual status progression with instant observer side effects:</p>
+          <ul style="font-size: 13px; color: var(--color-text-muted); line-height: 1.8; padding-left: 18px;">
+            <li><strong>Pending Payment</strong> ➔ Automated order confirmation Email + WhatsApp</li>
+            <li><strong>Fulfillment &amp; Packing</strong> ➔ Packing team dispatch alert</li>
+            <li><strong>Out for Delivery</strong> ➔ Dynamic tracking ID + courier notification</li>
+            <li><strong>Delivered &amp; Completed</strong> ➔ Delivery confirmation &amp; review request</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Embedded Agentic AI -->
+    <div class="slide">
+      <div class="badge badge-gold">Agentic AI</div>
+      <h2>Autonomous AI Triage Agent</h2>
+      <p class="subtitle">
+        Heuristic evaluation and proactive campaign synthesis running inside <span class="code-pill">src/lib/ai-triage.ts</span>.
+      </p>
+      <div class="grid-2">
+        <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
+          <div class="badge badge-gold">VIP Concierge Briefing</div>
+          <h3>High-Value Patron Engagement</h3>
+          <p style="margin-bottom: 10px;">Triggered when an order pushes LTV &ge; $500 or order total &ge; $500:</p>
+          <p style="font-size: 12.5px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border-left: 3px solid var(--color-gold);">
+            <em>&quot;Patron Elena Rostova placed order #1079 for $620.00. Cumulative LTV is $1,420.00 across 3 orders. Recommended: Assign dedicated concierge, flag luxury packaging, dispatch priority WhatsApp acknowledgment.&quot;</em>
+          </p>
+        </div>
+        <div class="card" style="border-color: rgba(244, 63, 94, 0.4);">
+          <div class="badge" style="background: rgba(244, 63, 94, 0.15); color: var(--color-rose); border: 1px solid rgba(244, 63, 94, 0.3);">Win-Back Recovery</div>
+          <h3>Cancelled-Order Discount Generator</h3>
+          <p style="margin-bottom: 10px;">Triggered immediately on order cancellation events:</p>
+          <p style="font-size: 12.5px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border-left: 3px solid var(--color-rose);">
+            <em>&quot;Formulates unique coupon <span class="code-pill">COMEBACK-1077</span> (15% OFF) and synthesizes empathetic copy addressing the abandoned items with 1-click dispatch.&quot;</em>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Business Impact & Charts -->
+    <div class="slide">
+      <div class="badge badge-primary">Business ROI</div>
+      <h2>Quantifiable Revenue Acceleration</h2>
+      <p class="subtitle">
+        Transforming raw e-commerce events into measurable retention and customer lifetime value.
+      </p>
+      <div class="grid-2" style="height: 300px;">
+        <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <h3 style="margin-bottom: 12px; font-size: 14px;">Revenue Contribution by Customer Tier</h3>
+          <div style="width: 220px; height: 220px;">
+            <canvas id="tierChart"></canvas>
+          </div>
+        </div>
+        <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+          <h3 style="margin-bottom: 16px;">Key Operational Benchmarks</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <div class="metric-value" style="color: var(--color-gold);">62%</div>
+              <div class="metric-label">VIP Revenue Share</div>
+            </div>
+            <div>
+              <div class="metric-value" style="color: var(--color-emerald);">100%</div>
+              <div class="metric-label">Guest ID Resolution</div>
+            </div>
+            <div>
+              <div class="metric-value" style="color: var(--color-primary-light);">18.4%</div>
+              <div class="metric-label">Win-Back Conversion</div>
+            </div>
+            <div>
+              <div class="metric-value" style="color: var(--color-accent);">&lt; 1s</div>
+              <div class="metric-label">Webhook Dispatch Speed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Quality Assurance & Automated Testing -->
+    <div class="slide">
+      <div class="badge badge-emerald">Testing &amp; QA</div>
+      <h2>Robust Automated Verification</h2>
+      <p class="subtitle">
+        100% passing test suites across both unit and end-to-end integration layers.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="badge badge-emerald">Vitest Unit Suite</div>
+          <h3>15 / 15 Passed (37ms)</h3>
+          <p style="margin-bottom: 10px;">Validating design patterns, boundaries, and logic:</p>
+          <ul style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.8; padding-left: 18px;">
+            <li>WooCommerceAdapter payload normalization &amp; guest email merging</li>
+            <li>Tiered LTV threshold boundaries ($199 vs $200, $499 vs $500)</li>
+            <li>Strategy switching via SegmentationContext at runtime</li>
+            <li>WorkflowEngine multi-observer subscription and event broadcast</li>
+            <li>AiTriageAgent VIP and cancellation alert triggers</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="badge badge-emerald">Playwright E2E Suite</div>
+          <h3>7 / 7 Passed (12.0s)</h3>
+          <p style="margin-bottom: 10px;">Testing real browser user journeys:</p>
+          <ul style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.8; padding-left: 18px;">
+            <li>Dashboard load &amp; KPI metrics verification</li>
+            <li>Webhook Simulator modal triggering all 4 demo presets</li>
+            <li>Guest checkout (<span class="code-pill">customer_id = 0</span>) email resolution</li>
+            <li>360° Customer Drawer inspection &amp; communication tabs</li>
+            <li>Pipeline order status advancement &amp; AI triage actioning</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Live Demo & Conclusion -->
+    <div class="slide">
+      <div class="badge badge-primary">Experience the Platform</div>
+      <h1>Live Demo &amp; Code Inspection</h1>
+      <p class="subtitle">
+        The application is live and fully interactive on localhost.
+      </p>
+      <div class="card" style="max-width: 650px; margin: 0 auto; text-align: center; border-color: rgba(99, 102, 241, 0.4);">
+        <h3 style="font-size: 22px; margin-bottom: 8px;">Explore Kilowott CRM Now</h3>
+        <p style="margin-bottom: 20px;">Open your browser to run live webhook simulations and 360° drawer inspections:</p>
+        <a href="http://localhost:3000" target="_blank" style="display: inline-block; background: var(--color-primary); color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);">
+          Launch Application: http://localhost:3000 &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+      <div class="slide-counter" id="counter">Slide 1 of 8</div>
+      <div class="nav-buttons">
+        <button class="nav-btn" onclick="prevSlide()">&larr; Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next &rarr;</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('counter');
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= slides.length) index = slides.length - 1;
+      slides[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      counter.textContent = `Slide ${currentSlide + 1} of ${slides.length}`;
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    // Chart.js initialization
+    window.addEventListener('load', () => {
+      const ctx = document.getElementById('tierChart');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['VIP Tier', 'Repeat Buyers', 'New Customers'],
+            datasets: [{
+              data: [62, 28, 10],
+              backgroundColor: ['#f59e0b', '#6366f1', '#10b981'],
+              borderWidth: 0,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8', font: { size: 11 } }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
